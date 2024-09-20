@@ -144,31 +144,31 @@ def querySolver (query : Array IR.SMT.Command) : MetaM (Option (Sexp × String))
   emitCommands solver query
   emitCommand solver .checkSat
   let stdout ← solver.stdout.getLine
-  let (checkSatResponse, _) ← getSexp stdout
+  let checkSatResponse : Sexp := .atom (.symb stdout.trim)
   match checkSatResponse with
   | .atom (.symb "sat") =>
     emitCommand solver .getModel
     let (_, solver) ← solver.takeStdin
     let stdout ← solver.stdout.readToEnd
     let stderr ← solver.stderr.readToEnd
-    let (model, _) ← getSexp stdout
+    -- let (model, _) ← getSexp stdout
     solver.kill
     trace[auto.smt.result] "{name} says Sat"
-    trace[auto.smt.model] "Model:\n{model}"
+    -- trace[auto.smt.model] "Model:\n{model}"
     trace[auto.smt.stderr] "stderr:\n{stderr}"
     return .none
   | .atom (.symb "unsat") =>
-    emitCommand solver .getUnsatCore
-    emitCommand solver .getProof
+    -- emitCommand solver .getUnsatCore
+    -- emitCommand solver .getProof
     let (_, solver) ← solver.takeStdin
     let stdout ← solver.stdout.readToEnd
     let stderr ← solver.stderr.readToEnd
-    let (unsatCore, stdout) ← getSexp stdout
+    -- let (unsatCore, stdout) ← getSexp stdout
     solver.kill
-    trace[auto.smt.result] "{name} says Unsat, unsat core:\n{unsatCore}"
+    -- trace[auto.smt.result] "{name} says Unsat, unsat core:\n{unsatCore}"
     trace[auto.smt.proof] "Proof:\n{stdout}"
     trace[auto.smt.stderr] "stderr:\n{stderr}"
-    return .some (unsatCore, stdout)
+    return .some (default, stdout)
   | _ =>
     trace[auto.smt.result] "{name} produces unexpected check-sat response\n {checkSatResponse}"
     return .none

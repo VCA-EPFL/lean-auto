@@ -299,35 +299,35 @@ def querySMT (exportFacts : Array REntry) (exportInds : Array MutualIndInfo) : L
     Solver.SMT.saveQuery commands
   let .some (unsatCore, proof) ← Solver.SMT.querySolver commands
     | return .none
-  let unsatCoreIds ← Solver.SMT.validFactOfUnsatCore unsatCore
-  -- **Print valuation of SMT atoms**
-  SMT.withExprValuation sni state.h2lMap (fun tyValMap varValMap etomValMap => do
-    for (atomic, name) in state.h2lMap.toArray do
-      let e ← SMT.LamAtomic.toLeanExpr tyValMap varValMap etomValMap atomic
-      trace[auto.smt.printValuation] "|{name}| : {e}"
-    )
-  -- **Print STerms corresponding to `validFacts` in unsatCore**
-  for id in unsatCoreIds do
-    let .some sterm := validFacts[id]?
-      | throwError "runAuto :: Index {id} of `validFacts` out of range"
-    trace[auto.smt.unsatCore.smtTerms] "|valid_fact_{id}| : {sterm}"
-  -- **Print Lean expressions correesponding to `validFacts` in unsatCore**
-  SMT.withExprValuation sni state.h2lMap (fun tyValMap varValMap etomValMap => do
-    for id in unsatCoreIds do
-      let .some t := exportLamTerms[id]?
-        | throwError "runAuto :: Index {id} of `exportLamTerms` out of range"
-      let e ← Lam2D.interpLamTermAsUnlifted tyValMap varValMap etomValMap 0 t
-      trace[auto.smt.unsatCore.leanExprs] "|valid_fact_{id}| : {← Core.betaReduce e}"
-    )
-  -- **Print derivation of unsatCore**
-  for id in unsatCoreIds do
-    let .some t := exportLamTerms[id]?
-      | throwError "runAuto :: Index {id} of `exportLamTerm` out of range"
-    let vderiv ← LamReif.collectDerivFor (.valid [] t)
-    trace[auto.smt.unsatCore.deriv] "|valid_fact_{id}| : {vderiv}"
-  if auto.smt.rconsProof.get (← getOptions) then
-    let (_, _) ← Solver.SMT.getSexp proof
-    logWarning "Proof reconstruction is not implemented."
+  -- let unsatCoreIds ← Solver.SMT.validFactOfUnsatCore unsatCore
+  -- -- **Print valuation of SMT atoms**
+  -- SMT.withExprValuation sni state.h2lMap (fun tyValMap varValMap etomValMap => do
+  --   for (atomic, name) in state.h2lMap.toArray do
+  --     let e ← SMT.LamAtomic.toLeanExpr tyValMap varValMap etomValMap atomic
+  --     trace[auto.smt.printValuation] "|{name}| : {e}"
+  --   )
+  -- -- **Print STerms corresponding to `validFacts` in unsatCore**
+  -- for id in unsatCoreIds do
+  --   let .some sterm := validFacts[id]?
+  --     | throwError "runAuto :: Index {id} of `validFacts` out of range"
+  --   trace[auto.smt.unsatCore.smtTerms] "|valid_fact_{id}| : {sterm}"
+  -- -- **Print Lean expressions correesponding to `validFacts` in unsatCore**
+  -- SMT.withExprValuation sni state.h2lMap (fun tyValMap varValMap etomValMap => do
+  --   for id in unsatCoreIds do
+  --     let .some t := exportLamTerms[id]?
+  --       | throwError "runAuto :: Index {id} of `exportLamTerms` out of range"
+  --     let e ← Lam2D.interpLamTermAsUnlifted tyValMap varValMap etomValMap 0 t
+  --     trace[auto.smt.unsatCore.leanExprs] "|valid_fact_{id}| : {← Core.betaReduce e}"
+  --   )
+  -- -- **Print derivation of unsatCore**
+  -- for id in unsatCoreIds do
+  --   let .some t := exportLamTerms[id]?
+  --     | throwError "runAuto :: Index {id} of `exportLamTerm` out of range"
+  --   let vderiv ← LamReif.collectDerivFor (.valid [] t)
+  --   trace[auto.smt.unsatCore.deriv] "|valid_fact_{id}| : {vderiv}"
+  -- if auto.smt.rconsProof.get (← getOptions) then
+  --   let (_, _) ← Solver.SMT.getSexp proof
+  --   logWarning "Proof reconstruction is not implemented."
   if (auto.smt.trust.get (← getOptions)) then
     logWarning "Trusting SMT solvers. `autoSMTSorry` is used to discharge the goal."
     return .some (← Meta.mkAppM ``Solver.SMT.autoSMTSorry #[Expr.const ``False []])
